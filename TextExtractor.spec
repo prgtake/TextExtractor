@@ -5,7 +5,7 @@ a = Analysis(
     ['textextractor.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('textextractor.py', '.')],
     hiddenimports=['pandas', 'docx', 'pptx', 'extract_msg', 'olefile', 'PIL._tkinter_finder'],
     hookspath=[],
     hooksconfig={},

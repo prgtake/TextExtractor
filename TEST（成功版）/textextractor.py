@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =====================================================
-#  TextExtractor1 v1.1.1
+#  TextExtractor1 v1.1.0
 #  Copyright (c) 2026 Datan (データン)
 #  Licensed under the MIT License.
 # =====================================================
@@ -33,7 +33,7 @@ CONFIG_FILE = os.path.join(BASE_DIR, "app_config.json")
 DEFAULT_MODEL = "gemini-2.5-flash-lite"
 
 # アプリバージョン
-APP_VERSION = "1.1.1"
+APP_VERSION = "1.1.0"
 
 def load_config():
     config = {"GEMINI_API_KEY": os.environ.get("GEMINI_API_KEY"), "MODEL_NAME": DEFAULT_MODEL}
@@ -158,27 +158,17 @@ class TextExtractor:
         sb.pack(side="right", fill="y")
         self.log_area.config(yscrollcommand=sb.set)
 
-        # ログのタグ設定（色分け）
-        self.log_area.tag_config("error", foreground="#d32f2f")   # 赤
-        self.log_area.tag_config("debug", foreground="#757575")   # グレー
-        self.log_area.tag_config("info", foreground="#1976d2")    # 青
-        self.log_area.tag_config("success", foreground="#388e3c") # 緑
-        self.log_area.tag_config("warning", foreground="#f57c00") # オレンジ
-
-    def log(self, msg, level="INFO"):
+    def log(self, msg):
         now = datetime.datetime.now().strftime("%H:%M:%S")
-        level = level.upper()
-        tag = level.lower()
-        
         self.log_area.config(state="normal")
-        self.log_area.insert("end", f"[{now}] [{level}] {msg}\n", tag)
+        self.log_area.insert("end", f"[{now}] {msg}\n")
         self.log_area.see("end")
         self.log_area.config(state="disabled")
         self.master.update()
 
     def stop_process(self):
         self.stop_requested = True
-        self.log("!!! 停止リクエストを受け付けました。現在の処理が終わり次第停止します。 !!!", "WARNING")
+        self.log("!!! 停止リクエストを受け付けました。現在の処理が終わり次第停止します。 !!!")
         self.stop_btn.config(state="disabled")
 
     def update_rag_list(self):
@@ -241,12 +231,11 @@ class TextExtractor:
             "----------------------------\n\n"
             "【高精度に計算させるコツ】\n"
             "合計点や判定を求める場合は、必ずその「根拠となる数値（各科目の点数など）」も出力項目に含め、先に書き出させるようにしてください。これだけで計算精度が劇的に向上します。\n\n"
-            "【v1.1.1 新機能】\n"
+            "【v1.1.0 新機能】\n"
             "・一括モード: 複数ファイルを横断して1つのレコードにまとめます。\n"
-            "・SQLiteツール: プロンプト内に『###使用するSQLiteのパス』を記述すると、Geminiが外部DBを検索できます。\n"
-            "  ※注意: DBパスは必ず「C:\\data\\db.db」のような【絶対パス】で記述してください。"
+            "・SQLiteツール: プロンプト内に『###使用するSQLiteのパス』を記述すると、Geminiが外部DBを検索できます。"
         )
-        messagebox.showinfo(f"TextExtractor1 v{APP_VERSION} 書き方ヘルプ", help_text)
+        messagebox.showinfo("TextExtractor1 v1.1.0 書き方ヘルプ", help_text)
 
     def extract_text(self, file_path):
         ext = os.path.splitext(file_path)[1].lower()
@@ -323,9 +312,8 @@ class TextExtractor:
             f"   ・【抽出】項目: 提示されたファイルの内容のみを使用してください。検索ツールは一切使用せず、見つからない場合は必ず空文字 (\"\") としてください。\n"
             f"   ・【生成】項目: 現在利用可能なツール（{tools_info}）を必要に応じて利用し、あなたの知見や推論に基づいた回答を生成してください。\n"
             f"3. 原則として、英字や記号が多い不自然な文字列はOCR失敗とみなし、日本語として意味が通じるよう再解釈してください。\n"
-            f"4. 各項目の値は、配列（リスト）形式を使用せず、必ず1つの文字列として出力してください。複数ある場合は読点（、）で繋いでください。\n"
-            f"5. 解説、挨拶、Markdownの装飾(```json等)は一切含めず、パース可能な純粋なJSONデータのみを返してください。\n"
-            f"6. 複数の対象がある場合は、必ずJSON配列 [{{...}}, {{...}}] 形式で返してください。\n"
+            f"4. 解説、挨拶、Markdownの装飾(```json等)は一切含めず、パース可能な純粋なJSONデータのみを返してください。\n"
+            f"5. 複数の対象がある場合は、必ずJSON配列 [{{...}}, {{...}}] 形式で返してください。\n"
         )
         return instruction
 
@@ -338,34 +326,18 @@ class TextExtractor:
             messagebox.showerror("エラー", "有効なプロンプトファイルが選択されていません。")
             return
         
-        # SQLiteツールの事前チェック
-        self.sqlite_paths = []
-        if self.use_sqlite_tool.get():
-            tag = "###使用するSQLiteのパス"
-            if tag not in self.prompt_text:
-                messagebox.showerror(f"TextExtractor1 v{APP_VERSION}", f"SQLite利用が有効ですが、プロンプト内に「{tag}」が見つかりません。")
-                return
-            self.sqlite_paths = re.findall(r'"([^"]+\.db(?:sqlite\d?)?)"', self.prompt_text)
-            for p in self.sqlite_paths:
-                if not os.path.exists(p):
-                    messagebox.showerror(f"TextExtractor1 v{APP_VERSION}", f"指定されたSQLiteファイルが見つかりません:\n{p}")
-                    return
-
-        # RAGツールの事前チェック
-        if self.use_file_search.get() and not self.file_search_store.get():
-            messagebox.showerror(f"TextExtractor1 v{APP_VERSION}", "RAG利用が有効ですが、使用するRAGストアが選択されていません。")
-            return
-
         self.stop_requested = False
         self.run_btn.config(state="disabled")
         self.stop_btn.config(state="normal")
         self.log_area.config(state="normal")
         self.log_area.delete("1.0", "end")
         self.log_area.config(state="disabled")
-        self.log("=== 処理開始 ===", "INFO")
+        self.log("=== 処理開始 ===")
 
         save_config(self.api_key, self.model_var.get())
         
+        self.sqlite_paths = re.findall(r'"([^"]+\.db(?:sqlite\d?)?)"', self.prompt_text)
+
         db_path = os.path.join(folder_path, f"{os.path.splitext(os.path.basename(self.prompt_file_path))[0]}_DB.db")
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
@@ -373,23 +345,18 @@ class TextExtractor:
         cur.execute(f"CREATE TABLE IF NOT EXISTS extracted_data (filename TEXT, {cols_sql})")
         conn.commit()
 
-        # 拡張子フィルタの強化 (.txt はデータとして重要なので除外から外す)
-        exclude_exts = (".db", ".exe", ".zip", ".py", ".msi", ".bat", ".dll")
-        prompt_fname = os.path.basename(self.prompt_file_path)
-        
+        # 復元: use_recursive に基づくファイルリスト取得ロジック
         files_to_process = []
         if self.use_recursive.get():
             for root_dir, dirs, files in os.walk(folder_path):
                 for f in files:
-                    if not f.lower().endswith(exclude_exts) and f != prompt_fname:
+                    if not f.endswith((".db", ".txt")):
                         files_to_process.append(os.path.join(root_dir, f))
         else:
             files_to_process = [os.path.join(folder_path, f) for f in os.listdir(folder_path) 
-                                if os.path.isfile(os.path.join(folder_path, f)) 
-                                and not f.lower().endswith(exclude_exts) and f != prompt_fname]
+                                if os.path.isfile(os.path.join(folder_path, f)) and not f.endswith((".db", ".txt"))]
         
-        self.log(f"検出項目 ({len(self.columns)}件): {', '.join(self.columns)}", "INFO")
-        self.log(f"処理対象ファイル数: {len(files_to_process)}", "INFO")
+        self.log(f"検出項目 ({len(self.columns)}件): {', '.join(self.columns)}")
 
         try:
             if self.use_batch_mode.get():
@@ -401,10 +368,10 @@ class TextExtractor:
             self.run_btn.config(state="normal")
             self.stop_btn.config(state="disabled")
             if self.stop_requested:
-                self.log("=== 処理を中断しました ===", "WARNING")
+                self.log("=== 処理を中断しました ===")
                 messagebox.showwarning("中断", "処理が中断されました。")
             else:
-                self.log("=== 全処理完了 ===", "SUCCESS")
+                self.log("=== 全処理完了 ===")
                 messagebox.showinfo("完了", "すべての処理が終了しました。")
 
     def process_individual(self, files, conn, cur):
@@ -413,11 +380,11 @@ class TextExtractor:
         for i, file_path in enumerate(files):
             if self.stop_requested: break
             fname = os.path.basename(file_path)
-            self.log(f"[{i+1}/{len(files)}] 処理中: {fname}", "INFO")
+            self.log(f"[{i+1}/{len(files)}] 処理中: {fname}")
             
             cur.execute("SELECT COUNT(*) FROM extracted_data WHERE filename = ?", (fname,))
             if cur.fetchone()[0] > 0:
-                self.log("  -> スキップ (処理済み)", "DEBUG")
+                self.log("  -> スキップ (処理済み)")
                 success_count += 1
                 continue
 
@@ -427,7 +394,7 @@ class TextExtractor:
                     vals = [fname] + [str(item.get(c, "")) for c in self.columns]
                     cur.execute(f"INSERT INTO extracted_data VALUES ({', '.join(['?']*len(vals))})", vals)
                 conn.commit()
-                self.log(f"  -> 成功: {len(res)}件登録", "SUCCESS")
+                self.log(f"  -> 成功: {len(res)}件登録")
                 success_count += 1
             else:
                 fail_count += 1
@@ -437,7 +404,7 @@ class TextExtractor:
                     if self.stop_requested: break
                     time.sleep(0.1)
                     self.master.update()
-        self.log(f"結果: 成功 {success_count} / 失敗 {fail_count}", "INFO" if fail_count == 0 else "WARNING")
+        self.log(f"結果: 成功 {success_count} / 失敗 {fail_count}")
 
     def process_batch(self, files, conn, cur):
         CHUNK_SIZE = 20
@@ -445,7 +412,7 @@ class TextExtractor:
         for i in range(0, len(files), CHUNK_SIZE):
             if self.stop_requested: break
             chunk = files[i:i+CHUNK_SIZE]
-            self.log(f"一括処理中: {i+1}～{min(i+CHUNK_SIZE, len(files))} ファイル目", "INFO")
+            self.log(f"一括処理中: {i+1}～{min(i+CHUNK_SIZE, len(files))} ファイル目")
             
             contents = [f"{self.prompt_text}{self.get_system_instruction()}\n"
                         f"※現在【一括モード】で実行中です。以下の複数ファイルを横断して解析してください。\n"]
@@ -474,9 +441,9 @@ class TextExtractor:
                         vals = [f"Batch_{i//CHUNK_SIZE}"] + [str(item.get(c, "")) for c in self.columns]
                         cur.execute(f"INSERT INTO extracted_data VALUES ({', '.join(['?']*len(vals))})", vals)
                     conn.commit()
-                    self.log(f"  -> 統合成功", "SUCCESS")
+                    self.log(f"  -> 統合成功")
                 except:
-                    self.log("  -> 解析失敗 (JSONパースエラー)", "ERROR")
+                    self.log("  -> 解析失敗 (JSONパースエラー)")
             if i + CHUNK_SIZE < len(files):
                 for _ in range(20):
                     if self.stop_requested: break
@@ -504,7 +471,7 @@ class TextExtractor:
             parsed = json.loads(re.search(r"(\[.*\]|\{.*\})", raw_res, re.DOTALL).group(1))
             return parsed if isinstance(parsed, list) else [parsed]
         except Exception as e:
-            self.log(f"  -> 解析失敗: {e}", "ERROR")
+            self.log(f"  -> [エラー] 失敗: {e}")
             return None
 
     def execute_with_tools(self, contents):
@@ -523,35 +490,35 @@ class TextExtractor:
             return self.call_gemini_raw(contents, tools=tools, use_json=not tools)
 
         # 複数のツールがある場合、多段階処理（ステップ分け）を実行
-        self.log("  -> 複数ツール併用のための多段階解析を開始...", "INFO")
+        self.log("  -> 複数ツール併用のための多段階解析を開始...")
         combined_research = ""
         original_prompt = contents[0]
         binary_parts = contents[1:]
 
         # Step 1: WEB検索
         if has_web:
-            self.log("     [Step 1] WEB検索を実行中...", "DEBUG")
+            self.log("     [Step 1] WEB検索を実行中...")
             res = self.call_gemini_raw(contents, tools=[{"google_search": {}}])
             if res: combined_research += f"### WEB検索結果:\n{res}\n\n"
 
         # Step 2: RAG(File Search)
         if has_rag:
             if self.stop_requested: return None
-            self.log("     [Step 2] RAG検索を実行中...", "DEBUG")
+            self.log("     [Step 2] RAG検索を実行中...")
             res = self.call_gemini_raw(contents, tools=[{"file_search": {"file_search_store_names": [self.file_search_store.get()]}}])
             if res: combined_research += f"### RAG(File Search)結果:\n{res}\n\n"
 
         # Step 3: SQLiteツール
         if has_sqlite:
             if self.stop_requested: return None
-            self.log("     [Step 3] SQLiteデータベースを参照中...", "DEBUG")
+            self.log("     [Step 3] SQLiteデータベースを参照中...")
             db_prompt = f"以下の調査結果を踏まえて、必要に応じてSQLiteツールで追加情報を確認してください。\n\n調査メモ:\n{combined_research}\n\n元の指示:\n{original_prompt}"
             res = self.call_gemini_raw([db_prompt] + binary_parts, tools=[self.sql_tool])
             if res: combined_research += f"### SQLite調査結果:\n{res}\n\n"
 
         # Step 4: 最終合成 (JSON出力)
         if self.stop_requested: return None
-        self.log("     [Final Step] すべての情報を統合してJSONを生成中...", "INFO")
+        self.log("     [Final Step] すべての情報を統合してJSONを生成中...")
         final_prompt = (
             f"以下の調査結果を統合し、当初の指示に従って最終的な解析結果を純粋なJSON形式で出力してください。\n\n"
             f"### 調査結果のまとめ ###\n{combined_research}\n\n"
@@ -574,27 +541,25 @@ class TextExtractor:
         for attempt in range(max_retries):
             try:
                 response = self.client.models.generate_content(model=self.model_var.get(), contents=contents, config=config)
+                # 安全確認: responseが存在し、text属性を持っており、かつ空ではない場合のみstrip()を実行
                 if response and hasattr(response, 'text') and response.text:
                     return response.text.strip()
-                return ""
+                return "" # テキストがない場合は空文字を返し、エラーを防ぐ
             except Exception as e:
                 err_msg = str(e)
                 is_retryable = False
-                
-                # エラーコードの明示的な判別
-                if isinstance(e, APIError):
-                    # 429: Rate Limit, 503: Service Unavailable, 500: Internal Error, 504: Gateway Timeout
-                    if e.code in [429, 503, 500, 504]:
-                        is_retryable = True
-                elif any(x in err_msg for x in ["429", "503", "500", "504", "UNAVAILABLE", "Resource has been exhausted", "Deadline Exceeded"]):
+                if isinstance(e, APIError) and (e.code in [429, 503, 500, 504]):
+                    is_retryable = True
+                elif any(x in err_msg for x in ["429", "503", "500", "504", "UNAVAILABLE", "Resource has been exhausted"]):
                     is_retryable = True
 
                 if is_retryable and attempt < max_retries - 1:
                     wait_time = 30 * (2 ** attempt)
-                    self.log(f"API制限または一時的エラー (Code: {getattr(e, 'code', 'Unknown')})。{wait_time}秒待機して再試行します... ({attempt + 1}/{max_retries})", "WARNING")
+                    reason = f"API制限/過負荷"
+                    self.log(f"  -> {reason}。{wait_time}秒待機して再試行します... ({attempt + 1}/{max_retries})")
                     time.sleep(wait_time)
                 else:
-                    self.log(f"APIエラー: {e}", "ERROR")
+                    self.log(f"  -> [エラー] 失敗: {e}")
                     break
         return None
 
@@ -677,7 +642,7 @@ class PromptConsultationWindow:
             "1. 1行目に必ず『出力項目: 項目A, 項目B』の形式でデータベースの列名を記述させてください。\n"
             "2. 各項目について、『【抽出】』(資料から転記)か『【生成】』(推論/検索)かを明示させてください。\n"
             "3. ツール(WEB検索、RAG、SQLite)の活用を積極的に提案してください。\n"
-            "4. SQLiteツールを使う場合は、プロンプト内にDBパスを \"C:\\path\\to\\db.db\" のように含めるよう指示してください。※必ず【絶対パス】を使用するよう強調してください。\n"
+            "4. SQLiteツールを使う場合は、プロンプト内にDBパスを \"C:\\path\\to\\db.db\" のように含めるよう指示してください。\n"
             "5. 回答には必ず、そのままコピペして使える指示文のサンプルを ```text ... ``` 形式で含めてください。\n"
         )
         self.chat = []
@@ -704,7 +669,7 @@ class PromptConsultationWindow:
             "⇒ 指示文の例：\n"
             "--------------------------------------------\n"
             "###使用するSQLiteのパス\n"
-            "\"C:\\data\\MasterData.db\"  ←※必ず絶対パスで記述\n\n"
+            "\"C:\\data\\MasterData.db\"\n\n"
             "出力項目: 会社名, 合計金額, 提案の要約, 顧客ランク\n\n"
             "### 処理指示\n"
             "・【会社名】：【抽出】見積書に記載されている発行元の会社名。\n"
