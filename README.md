@@ -1,10 +1,11 @@
-# TextExtractor1 v1.1.0
+# TextExtractor1 v1.1.1
 
 Google Gemini APIのマルチモーダル能力を最大限に引き出し、あらゆる書類から「正確な事実」と「高度なAI推論」を同時に取り出すためのデータ抽出・解析プラットフォームです。
 
 ## 1. 主な機能と特徴
 - **事実と推論のハイブリッド抽出**: 提示された資料から「そのまま書き写す」項目と、AIが「知識や検索を元に考える」項目を明確に分離。
 - **圧倒的なファイル対応力**: 画像、PDF、Office製品（新旧）、メール、一太郎（.jtd）に対応。
+- **サブフォルダの再帰検索 (v1.1.1 新機能)**: 「サブフォルダも含める」を有効にすることで、階層構造を持つフォルダ内の全ファイルを自動検出し、一括処理。
 - **スマートな設定管理**: APIキーやモデル名を `app_config.json` に自動保存。
 - **最新情報の補完**: Google検索やRAG（File Search Store）との連携。
 
@@ -61,25 +62,26 @@ Google Gemini APIのマルチモーダル能力を最大限に引き出し、あ
 ## 6. 操作手順
 1. アプリを起動し、APIキーを入力（初回のみ）。
 2. 「対象フォルダを選択」でファイル群を選択。
-3. 「指示ファイルを選択」でプロンプトを選択。
-4. 「指示ファイルを実行」で一括処理を開始。
+3. 必要に応じて「サブフォルダも含める」にチェック。
+4. 「指示ファイルを選択」でプロンプトを選択。
+5. 「指示ファイルを実行」で一括処理を開始。
    - 実行後、選択した**対象フォルダ内**に `[指示ファイル名]_DB.db` という名前でSQLiteデータベースが自動生成されます。
-5. 「DBをCSV出力」で結果を書き出し。
+6. 「DBをCSV出力」で結果を書き出し。
 
-5. 再実行とエラーへの対応
+## 7. 再実行とエラーへの対応
 - **自動スキップ機能**: 実行時にデータベース（.db）をチェックし、既に結果が格納されているファイルは自動的にスキップします。途中でエラーが起きた場合や、後からファイルを追加した場合でも、重複を気にせず再実行できます。
 - **堅牢なリトライ処理**: APIの過負荷（503）や回数制限（429）が発生した場合、指数バックオフ（待ち時間を段階的に増やす仕組み）を用いて、最大5回まで自動で再試行します。
 
-## 6. トークンの消費とコストについて
+## 8. トークンの消費とコストについて
 本アプリはGoogle Gemini APIを使用するため、処理内容に応じてトークンが消費されます。
 
 - **画像・PDF**: ページ数や解像度に応じてトークンを消費します。
 - **Office・テキスト系ファイル**: 事前にテキスト抽出を行うため、画像として送るよりもトークンを大幅に節約できます。
 - **WEB検索・RAG**: 有効にすると、検索結果の読み込みにより消費量が増加します。
 
-Gemini 1.5 Flashなどの軽量モデルを使用することで、高い処理能力を維持しつつコストを最小限に抑えることが可能です。
+Gemini 2.5 Flash Liteなどの軽量モデルを使用することで、高い処理能力を維持しつつコストを最小限に抑えることが可能です。
 
-## 6. ライセンス / License
+## 9. ライセンス / License
 Copyright (c) 2026 Datan (データン)  
 Licensed under the MIT License.
 
@@ -87,11 +89,12 @@ Licensed under the MIT License.
 
 # English Manual
 
-**TextExtractor1** is a data extraction and analysis platform designed to leverage the full multimodal capabilities of the Google Gemini API to simultaneously retrieve "accurate facts" and "advanced AI insights" from any document.
+**TextExtractor1 v1.1.1** is a data extraction and analysis platform designed to leverage the full multimodal capabilities of the Google Gemini API to simultaneously retrieve "accurate facts" and "advanced AI insights" from any document.
 
 ## 1. Key Features
 - **Hybrid Extraction of Facts and Reasoning**: Clearly separates items to be "transcribed as-is" from those the AI "thinks about based on knowledge or search."
 - **Unmatched File Compatibility**: Extracts text information from images, PDFs, Office products (new and old), emails, and even "Ichitaro" (.jtd) files.
+- **Recursive Folder Search (New in v1.1.1)**: Processes all files within selected directories and their subdirectories automatically.
 - **Smart Settings Management**: Automatically saves your API key and preferred Gemini model name, allowing you to start analysis instantly.
 - **Latest Information Supplementation**: By checking a box in the GUI, the AI autonomously references Google Search or specific knowledge bases (RAG) to generate enriched information.
 
@@ -134,16 +137,17 @@ Since this tool processes documents on a **"per-file"** basis, the following lim
 ## 5. Operating Procedures
 1. Launch the app and enter your API key when prompted (first time only).
 2. Click **"Select Target Folder"** and choose the folder containing the files you want to analyze.
-3. Click **"Select Instruction File"** and choose your prepared prompt (.txt).
-4. Verify the model name and turn on **"Web Search"** or **"RAG"** if needed.
-5. Click **"Run Instruction File"** to start batch processing of all files.
-6. After processing, click **"Export DB to CSV"** to save the accumulated data for use in Excel.
+3. Check **"Include Subfolders"** if necessary.
+4. Click **"Select Instruction File"** and choose your prepared prompt (.txt).
+5. Verify the model name and turn on **"Web Search"** or **"RAG"** if needed.
+6. Click **"Run Instruction File"** to start batch processing of all files.
+7. After processing, click **"Export DB to CSV"** to save the accumulated data for use in Excel.
 
-5. Resumption and Error Handling
+## 6. Resumption and Error Handling
 - **Automatic Skip Function**: Checks the database (.db) at runtime and automatically skips files that already have results stored. You can restart without worrying about duplicates if an error occurs mid-process or if you add files later.
 - **Robust Retry Processing**: If API overload (503) or rate limits (429) occur, the app automatically retries up to 5 times using exponential backoff (gradually increasing wait times).
 
-## 6. License
+## 7. License
 Copyright (c) 2026 Datan (データン)
 
 ### MIT License

@@ -1,4 +1,4 @@
-TextExtractor (by.gemini) v1.1.0 完全マニュアル
+TextExtractor (by.gemini) v1.1.1 完全マニュアル
 
 Google Gemini APIのマルチモーダル能力を最大限に引き出し、あらゆる書類から「正確な事実」と「高度なAI推論」を同時に取り出すためのデータ抽出・解析プラットフォームです。
 
@@ -10,6 +10,9 @@ Google Gemini APIのマルチモーダル能力を最大限に引き出し、あ
 
 ■ 圧倒的なファイル対応力
    画像やPDFはもちろん、Office製品（新旧）、メール、さらに「一太郎」まで、あらゆる形式の文書からテキスト情報を吸い上げます。
+
+■ サブフォルダの再帰検索 (v1.1.1 新機能)
+   「サブフォルダも含める」を有効にすることで、選択したフォルダ配下の全階層からファイルを自動的に検出し、一括処理できます。
 
 ■ スマートな設定管理
    APIキーや使用するGeminiモデル名は一度入力すれば自動保存。専門知識がなくても、起動してすぐに解析を始められます。
@@ -82,11 +85,12 @@ AIの動作を決定づける「指示ファイル（.txt）」は、以下の�
 --------------------------------------------------
 ① アプリを起動し、APIキーを求められたら入力します（初回のみ）。
 ② 「対象フォルダを選択」で、解析したいファイル群が入ったフォルダを選びます。
-③ 「指示ファイルを選択」で、作成したプロンプトファイルを選びます。
-④ 使用したいモデル名を確認し、必要なら「WEB検索」「RAG」をオンにします。
-⑤ 「指示ファイルを実行」を押すと、全ファイルの一括処理が始まります。
+③ 必要に応じて「サブフォルダも含める」にチェックを入れます。
+④ 「指示ファイルを選択」で、作成したプロンプトファイルを選びます。
+⑤ 使用したいモデル名を確認し、必要なら「WEB検索」「RAG」「SQLiteツール」をオンにします。
+⑥ 「指示ファイルを実行」を押すと、全ファイルの一括処理が始まります。
    ※処理結果は、選択した対象フォルダ内に「[指示ファイル名]_DB.db」として保存されます。
-⑥ 処理完了後、「DBをCSV出力」でExcel等で開けるデータとして保存できます。
+⑦ 処理完了後、「DBをCSV出力」でExcel等で開けるデータとして保存できます。
 
 --------------------------------------------------
 6. トークンの消費について
@@ -96,7 +100,7 @@ AIの動作を決定づける「指示ファイル（.txt）」は、以下の�
 ・Office文書/テキスト：事前に「文字情報」のみを抜き出して送信するため、画像として送るよりもトークン消費を抑えられます。
 ・WEB検索/RAG：検索結果の読み込みにより、通常よりも消費量が増えます。
 
-コストを抑えたい場合は、gemini-1.5-flash等の軽量モデルの利用を推奨します。
+コストを抑えたい場合は、gemini-2.5-flash-lite等の軽量モデルの利用を推奨します。
 
 --------------------------------------------------
 7. 困ったときは
@@ -118,7 +122,7 @@ Copyright (c) 2026 Datan (データン)
 
 
 ==================================================
-TextExtractor (by.gemini) Complete Manual
+TextExtractor (by.gemini) Complete Manual v1.1.1
 ==================================================
 
 A data extraction and analysis platform designed to leverage the full multimodal capabilities of the Google Gemini API to simultaneously retrieve "accurate facts" and "advanced AI insights" from any document.
@@ -131,6 +135,9 @@ A data extraction and analysis platform designed to leverage the full multimodal
 
 - Unmatched File Compatibility:
   Extracts text information from images, PDFs, Office products (new and old), emails, and even "Ichitaro" (.jtd) files.
+
+- Recursive Folder Search (New in v1.1.1):
+  By enabling "Include Subfolders," the tool automatically detects and processes files across all hierarchical levels within the selected folder.
 
 - Smart Settings Management:
   Automatically saves your API key and preferred Gemini model name after the first entry, allowing you to start analysis instantly.
@@ -180,10 +187,11 @@ The "Instruction File (.txt)" that determines the AI's behavior should follow th
 --------------------------------------------------
 1. Launch the app and enter your API key when prompted (first time only).
 2. Click "Select Target Folder" and choose the folder containing the files you want to analyze.
-3. Click "Select Instruction File" and choose your prepared prompt (.txt).
-4. Verify the model name and turn on "Web Search" or "RAG" if needed.
-5. Click "Run Instruction File" to start batch processing of all files.
-6. After processing, click "Export DB to CSV" to save the accumulated data for use in Excel.
+3. Check "Include Subfolders" if you want to search recursively.
+4. Click "Select Instruction File" and choose your prepared prompt (.txt).
+5. Verify the model name and turn on "Web Search," "RAG," or "SQLite Tool" if needed.
+6. Click "Run Instruction File" to start batch processing of all files.
+7. After processing, click "Export DB to CSV" to save the accumulated data for use in Excel.
 
 --------------------------------------------------
 5. Troubleshooting
